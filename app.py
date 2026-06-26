@@ -18,7 +18,7 @@ def init_connection():
 
 try:
     client = init_connection()
-    db = client["chat_db"]
+    db = client["ai_chat_database"]
     collection = db["messages_history"]
 except Exception as e:
     st.error(f"Database Connection Error: {e}")
