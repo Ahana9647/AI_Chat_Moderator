@@ -37,16 +37,17 @@ if st.sidebar.button("Log Out"):
 # AI Analysis
 def analyze_message(text):
     text_lower = text.lower()
-    bad_words = ["stupid", "bad", "hate", "খারাপ", "পাগল"]
-    good_words = ["good", "happy", "love", "ভালো", "ধন্যবাদ", "nice"]
+    toxic_words = ["fuck", "stupid", "idiot", "bad", "hate", "ugly"]
+    positive_words = ["love", "happy", "great", "nice", "good", "beautiful", "thanks"]
     
-    toxicity, emotion = "Low", "Neutral"
-    if any(word in text_lower for word in bad_words):
-        toxicity, emotion = "High", "Angry"
-    elif any(word in text_lower for word in good_words):
-        emotion = "Happy"
+    toxicity, emotion = "Safe 🟢", "Neutral 😐"
+    
+    if any(word in text_lower for word in toxic_words):
+        toxicity, emotion = "Toxic 🔴", "Angry 😡"
+    elif any(word in text_lower for word in positive_words):
+        toxicity, emotion = "Safe 🟢", "Positive 😊"
+        
     return {"emotion": emotion, "toxicity": toxicity}
-
 # Display Chat
 messages = list(collection.find().sort("timestamp", 1))
 for msg in messages:
