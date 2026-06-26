@@ -11,8 +11,7 @@ st.write("Real-time Cloud Chat Room with Real AI Analysis!")
 # ⚠️ এখানে তোমার MongoDB Atlas থেকে পাওয়া ক্লাউড কানেকশন স্ট্রিংটি বসাবে।
 # উদাহরণ: "mongodb+srv://username:password@cluster0.xxxx.mongodb.net/..."
 # যদি ক্লাউড লিংক না থাকে, তবে আপাতত নিচের লোকাল লিংকটিই থাক।
-MONGO_URI = "mongodb://localhost:27017/" 
-
+MONGO_URI = "mongodb+srv://ahana741222_db_user:xovyPVFSibWK6moy@whatsappcluster.vo6e4k0.mongodb.net/?appName=WhatsappCluster"
 @st.cache_resource
 def init_connection():
     return pymongo.MongoClient(MONGO_URI)
