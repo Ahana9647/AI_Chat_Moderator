@@ -1,103 +1,58 @@
 import streamlit as st
 import pymongo
 from datetime import datetime
-import time
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# Custom CSS for UI improvement
+# Custom CSS for Dynamic Colors
 st.markdown("""
     <style>
-    .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-    .welcome-text { text-align: center; font-size: 2em; font-weight: bold; color: #2C3E50; margin-bottom: 20px; }
-    .analysis-box { 
-        background-color: #f8f9fa; 
-        padding: 5px 10px; 
-        border-radius: 8px; 
-        border-left: 4px solid #3498db; 
-        font-size: 0.85em; 
-        color: #34495e; 
-    }
+    .stApp { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); }
+    .welcome-text { text-align: center; font-size: 2.5em; font-weight: bold; color: #6a11cb; text-shadow: 2px 2px 4px #aaa; }
+    .msg-box { padding: 10px; border-radius: 15px; margin-bottom: 10px; color: white; font-weight: 500; }
+    .analysis-box { background: rgba(255, 255, 255, 0.9); padding: 8px; border-radius: 10px; margin-top: 5px; color: #333; font-size: 0.8em; }
     </style>
 """, unsafe_allow_html=True)
 
-# MongoDB Connection
+# MongoDB
 MONGO_URI = "mongodb+srv://ahana741222_db_user:xovyPVFSibWK6moy@whatsappcluster.vo6e4k0.mongodb.net/?appName=WhatsappCluster"
-
-@st.cache_resource
-def get_db():
-    client = pymongo.MongoClient(MONGO_URI)
-    return client["ai_chat_database"]
-
-db = get_db()
+db = pymongo.MongoClient(MONGO_URI)["ai_chat_database"]
 collection = db["messages_history"]
 
-# Session State
-if "username" not in st.session_state:
-    st.session_state.username = ""
-
+# Session
+if "username" not in st.session_state: st.session_state.username = ""
 if not st.session_state.username:
-    name_input = st.text_input("Enter your name to join:")
-    if st.button("Join Room 🚀"):
-        if name_input.strip():
-            st.session_state.username = name_input
-            st.rerun()
+    name_input = st.text_input("Enter your name:")
+    if st.button("Join"):
+        st.session_state.username = name_input
+        st.rerun()
     st.stop()
 
-# Header
+# Helper for Dynamic Colors
+def get_color(text):
+    colors = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#FFD700", "#8A2BE2"]
+    return colors[hash(text) % len(colors)]
+
+# UI
 st.markdown(f"<div class='welcome-text'>Welcome, {st.session_state.username}! 👋</div>", unsafe_allow_html=True)
 
-# Sidebar
-if st.sidebar.button("🗑️ Clear All Chat"):
-    collection.delete_many({})
-    st.rerun()
-if st.sidebar.button("Log Out"):
-    st.session_state.username = ""
-    st.rerun()
+if st.sidebar.button("Clear Chat"): collection.delete_many({}); st.rerun()
 
-# AI Analysis Logic
-def analyze_message(text):
-    text_lower = text.lower()
-    if any(word in text_lower for word in ["fuck", "stupid", "hate"]):
-        return {"emotion": "Angry 😡", "toxicity": "Toxic 🔴", "category": "Sensitive", "urgency": "High"}
-    elif any(word in text_lower for word in ["love", "happy", "great"]):
-        return {"emotion": "Positive 😊", "toxicity": "Safe 🟢", "category": "Social", "urgency": "Low"}
-    return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low"}
-
-# Display Chat
-messages = list(collection.find().sort("timestamp", 1))
-
-for msg in messages:
-    user = msg.get("username", "Anonymous")
-    text = msg.get("text", "")
-    analysis = msg.get("analysis", {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low"})
-    msg_id = msg.get("_id")
+# Display
+for msg in collection.find().sort("timestamp", 1):
+    user = msg.get("username")
+    text = msg.get("text")
+    analysis = msg.get("analysis", {})
+    user_color = get_color(user)
+    msg_color = get_color(text)
     
     with st.chat_message(user):
-        st.markdown(f"**{user}**")
-        st.write(text)
-        # Analysis with improved colors
-        st.markdown(f"""
-            <div class='analysis-box'>
-            🤖 <b>{analysis.get('emotion')}</b> | <b>{analysis.get('toxicity')}</b> | 
-            Cat: {analysis.get('category')} | Urg: {analysis.get('urgency')}
-            </div>
-        """, unsafe_allow_html=True)
-        
-        if st.button("Delete", key=str(msg_id)):
-            collection.delete_one({"_id": msg_id})
-            st.rerun()
+        st.markdown(f"<b style='color:{user_color}'>{user}</b>", unsafe_allow_html=True)
+        st.markdown(f"<div class='msg-box' style='background-color:{msg_color}'>{text}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='analysis-box'>🤖 {analysis.get('emotion')} | {analysis.get('toxicity')}</div>", unsafe_allow_html=True)
+        if st.button("Delete", key=str(msg.get("_id"))): collection.delete_one({"_id": msg.get("_id")}); st.rerun()
 
 # Input
-user_message = st.chat_input("Type your message here...")
-if user_message:
-    analysis = analyze_message(user_message)
-    payload = {
-        "text": user_message, 
-        "username": st.session_state.username,
-        "analysis": analysis,
-        "timestamp": datetime.utcnow()
-    }
-    collection.insert_one(payload)
+if user_msg := st.chat_input("Type..."):
+    collection.insert_one({"text": user_msg, "username": st.session_state.username, "timestamp": datetime.utcnow()})
     st.rerun()
-    
