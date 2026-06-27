@@ -4,16 +4,14 @@ from datetime import datetime
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# CSS: হেডিং ভায়োলেট কালার এবং অন্যান্য ডিজাইন
+
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-    /* হেডিং ভায়োলেট (Violet) কালার করা হয়েছে */
-    .main-title { color: #8A2BE2 !important; text-align: center; font-weight: 800; font-size: 2.5em; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
-    .input-label { color: #000000 !important; font-weight: bold; font-size: 1.1em; }
-    
-    .msg-bubble { background-color: #d1e7ff; padding: 15px; border-radius: 15px; color: #003366; font-weight: 600; margin-bottom: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
-    .analysis-panel { background: #ffffff; padding: 10px; border-radius: 10px; margin-top: 5px; color: #000000; font-weight: bold; border-left: 5px solid #FF1493; }
+    .main-title { color: #8A2BE2 !important; text-align: center; font-weight: 800; font-size: 2.5em; }
+    .msg-bubble { background-color: #d1e7ff; padding: 15px; border-radius: 15px; color: #003366; font-weight: 600; margin-bottom: 5px; }
+    .analysis-panel { background: #ffffff; padding: 10px; border-radius: 10px; margin-top: 5px; color: #000000; font-weight: bold; border-left: 5px solid #FF1493; font-size: 0.85em; }
+    .time-text { font-size: 0.7em; color: #555; text-align: right; margin-top: -5px; margin-bottom: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -22,26 +20,24 @@ MONGO_URI = "mongodb+srv://ahana741222_db_user:xovyPVFSibWK6moy@whatsappcluster.
 db = pymongo.MongoClient(MONGO_URI)["ai_chat_database"]
 collection = db["messages_history"]
 
-# Header in Violet
+# Header
 st.markdown("<h1 class='main-title'>💬 AI Chat Moderator & Group</h1>", unsafe_allow_html=True)
 
-# Session Authentication
+# Session
 if "username" not in st.session_state: st.session_state.username = ""
 if not st.session_state.username:
-    st.markdown("<p class='input-label'>Enter your name:</p>", unsafe_allow_html=True)
-    name_input = st.text_input("", key="name_input")
+    name_input = st.text_input("Enter your name:")
     if st.button("Join Room 🚀"):
         if name_input.strip():
             st.session_state.username = name_input
             st.rerun()
     st.stop()
 
-# Welcome Text and Clear All Button Layout
+# Layout
 col1, col2 = st.columns([0.8, 0.2])
 with col1:
     st.markdown(f"<h3 style='color: #333;'>Welcome, {st.session_state.username}! 👋</h3>", unsafe_allow_html=True)
 with col2:
-    # চ্যাটের ভেতরেই সব ডিলিট করার বাটন
     if st.button("🗑️ Clear All"):
         collection.delete_many({})
         st.rerun()
@@ -61,6 +57,11 @@ for msg in collection.find().sort("timestamp", 1):
         st.markdown(f"<span style='color:#FF1493; font-weight:bold;'>{msg.get('username')}</span>", unsafe_allow_html=True)
         st.markdown(f"<div class='msg-bubble'>{msg.get('text')}</div>", unsafe_allow_html=True)
         
+        
+        ts = msg.get("timestamp")
+        time_str = ts.strftime("%I:%M %p") if isinstance(ts, datetime) else "N/A"
+        st.markdown(f"<div class='time-text'>{time_str}</div>", unsafe_allow_html=True)
+        
         ana = msg.get("analysis", {})
         st.markdown(f"""
             <div class='analysis-panel'>
@@ -79,6 +80,6 @@ if user_msg := st.chat_input("Type your message..."):
         "text": user_msg, 
         "username": st.session_state.username, 
         "analysis": analyze_message(user_msg),
-        "timestamp": datetime.utcnow()
+        "timestamp": datetime.now() # বর্তমান সময় সেভ করবে
     })
     st.rerun()
