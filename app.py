@@ -1,17 +1,19 @@
 import streamlit as st
 import pymongo
 from datetime import datetime
+import pytz  # সঠিক লোকাল সময় পাওয়ার জন্য
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# CSS ডিজাইন
+# CSS ডিজাইন: কালারগুলো যাতে খুব স্পষ্ট বোঝা যায়
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
     .main-title { color: #8A2BE2 !important; text-align: center; font-weight: 800; font-size: 2.5em; }
+    .input-label { color: #000000 !important; font-weight: bold; font-size: 1.1em; }
     .msg-bubble { background-color: #d1e7ff; padding: 15px; border-radius: 15px; color: #003366; font-weight: 600; margin-bottom: 5px; }
     .analysis-panel { background: #ffffff; padding: 10px; border-radius: 10px; margin-top: 5px; color: #000000; font-weight: bold; border-left: 5px solid #FF1493; font-size: 0.85em; }
-    .time-text { font-size: 0.7em; color: #555; text-align: right; margin-top: -5px; margin-bottom: 10px; }
+    .time-text { font-size: 0.75em; color: #333333; font-weight: bold; text-align: right; margin-top: -3px; margin-bottom: 10px; padding-right: 5px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -26,7 +28,8 @@ st.markdown("<h1 class='main-title'>💬 AI Chat Moderator & Group</h1>", unsafe
 # Session
 if "username" not in st.session_state: st.session_state.username = ""
 if not st.session_state.username:
-    name_input = st.text_input("Enter your name:")
+    st.markdown("<p class='input-label'>Enter your name:</p>", unsafe_allow_html=True)
+    name_input = st.text_input("", key="name_input")
     if st.button("Join Room 🚀"):
         if name_input.strip():
             st.session_state.username = name_input
@@ -51,15 +54,26 @@ def analyze_message(text):
         return {"emotion": "Positive 😊", "toxicity": "Safe 🟢", "category": "Social", "urgency": "Low 🟢"}
     return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low 🟢"}
 
+# Indian Timezone Configuration
+IST = pytz.timezone('Asia/Kolkata')
+
 # Display Chat
 for msg in collection.find().sort("timestamp", 1):
     with st.chat_message(msg.get("username")):
         st.markdown(f"<span style='color:#FF1493; font-weight:bold;'>{msg.get('username')}</span>", unsafe_allow_html=True)
         st.markdown(f"<div class='msg-bubble'>{msg.get('text')}</div>", unsafe_allow_html=True)
         
-      
+        # সময় প্রদর্শন লজিক (UTC থেকে IST-তে কনভার্ট করে দেখানো হচ্ছে)
         ts = msg.get("timestamp")
-        time_str = ts.strftime("%I:%M %p") if isinstance(ts, datetime) else "N/A"
+        if isinstance(ts, datetime):
+            if ts.tzinfo is None:
+                # যদি naive datetime হয়, তবে ওটাকে UTC ধরে নিয়ে IST-তে রূপান্তর করা হবে
+                ts = pytz.utc.localize(ts)
+            ist_time = ts.astimezone(IST)
+            time_str = ist_time.strftime("%I:%M %p")
+        else:
+            time_str = "N/A"
+            
         st.markdown(f"<div class='time-text'>{time_str}</div>", unsafe_allow_html=True)
         
         ana = msg.get("analysis", {})
@@ -76,10 +90,12 @@ for msg in collection.find().sort("timestamp", 1):
 
 # Input
 if user_msg := st.chat_input("Type your message..."):
+    # ডেটাবেসে সবসময় standard UTC সময় সেভ করা ভালো অভ্যাস
+    utc_now = datetime.now(pytz.utc)
     collection.insert_one({
         "text": user_msg, 
         "username": st.session_state.username, 
         "analysis": analyze_message(user_msg),
-        "timestamp": datetime.now() # বর্তমান সময় সেভ করবে
+        "timestamp": utc_now
     })
     st.rerun()
