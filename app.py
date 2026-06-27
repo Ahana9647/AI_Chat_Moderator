@@ -44,18 +44,29 @@ with col2:
         collection.delete_many({})
         st.rerun()
 
-# AI Analysis
+# উন্নত AI Analysis লজিক
 def analyze_message(text):
     text_lower = text.lower()
-    if any(w in text_lower for w in ["fuck", "stupid", "hate"]):
-        return {"emotion": "Angry 😡", "toxicity": "Toxic 🔴", "category": "Sensitive", "urgency": "High 🚨"}
-    elif any(w in text_lower for w in ["love", "happy", "great"]):
-        return {"emotion": "Positive 😊", "toxicity": "Safe 🟢", "category": "Social", "urgency": "Low 🟢"}
-    return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low 🟢"}
-
-# Indian Time Helper - সরাসরি বর্তমান সময়ের সাথে ৫:৩০ যোগ করবে
-def get_real_ist():
-    return datetime.utcnow() + timedelta(hours=5, minutes=30)
+    
+    # বিদ্যমান লজিক
+    neg_words = ["fuck", "stupid", "hate", "bad", "sad", "ugly"]
+    pos_words = ["love", "happy", "great", "nice", "good"]
+    
+    if any(w in text_lower for w in neg_words):
+        em, tox, cat, urg = "Angry/Sad 😡", "Toxic 🔴", "Sensitive", "High 🚨"
+    elif any(w in text_lower for w in pos_words):
+        em, tox, cat, urg = "Positive 😊", "Safe 🟢", "Social", "Low 🟢"
+    else:
+        em, tox, cat, urg = "Neutral 😐", "Safe 🟢", "General", "Low 🟢"
+    
+    # নতুন ফিচার: Intensity এবং Language
+    length = "Long" if len(text) > 20 else "Short"
+    lang = "Bengali" if any('\u0980' <= char <= '\u09FF' for char in text) else "English"
+        
+    return {
+        "emotion": em, "toxicity": tox, "category": cat, "urgency": urg,
+        "length": length, "language": lang
+    }
 
 # Display Chat
 for msg in collection.find().sort("timestamp", 1):
@@ -63,22 +74,19 @@ for msg in collection.find().sort("timestamp", 1):
         st.markdown(f"<span style='color:#FF1493; font-weight:bold;'>{msg.get('username')}</span>", unsafe_allow_html=True)
         st.markdown(f"<div class='msg-bubble'>{msg.get('text')}</div>", unsafe_allow_html=True)
         
-        # সময় প্রদর্শন
+        # সময় প্রদর্শন
         ts = msg.get("timestamp")
-        # যদি ডেটাবেসের সময় UTC হয়, তবে এখানেও একইভাবে IST এ কনভার্ট করে দেখানো হচ্ছে
-        if isinstance(ts, datetime):
-            ist_ts = ts + timedelta(hours=5, minutes=30)
-            time_str = ist_ts.strftime("%I:%M %p")
-        else:
-            time_str = "N/A"
-        
+        ist_ts = ts + timedelta(hours=5, minutes=30) if isinstance(ts, datetime) else "N/A"
+        time_str = ist_ts.strftime("%I:%M %p") if isinstance(ist_ts, datetime) else "N/A"
         st.markdown(f"<div class='time-text'>{time_str}</div>", unsafe_allow_html=True)
         
+        # অ্যানালাইসিস রেজাল্ট (নতুনগুলোসহ)
         ana = msg.get("analysis", {})
         st.markdown(f"""
             <div class='analysis-panel'>
             Emotion: {ana.get('emotion')} | Toxicity: {ana.get('toxicity')} | 
-            Cat: {ana.get('category')} | Urg: {ana.get('urgency')}
+            Cat: {ana.get('category')} | Urg: {ana.get('urgency')} <br>
+            Intensity: {ana.get('length')} | Lang: {ana.get('language')}
             </div>
         """, unsafe_allow_html=True)
         
@@ -92,6 +100,6 @@ if user_msg := st.chat_input("Type your message..."):
         "text": user_msg, 
         "username": st.session_state.username, 
         "analysis": analyze_message(user_msg),
-        "timestamp": datetime.utcnow() # ডেটাবেসে UTC সেভ হবে
+        "timestamp": datetime.utcnow()
     })
     st.rerun()
