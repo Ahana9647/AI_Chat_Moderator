@@ -4,13 +4,33 @@ from datetime import datetime
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# সুন্দর এবং আধুনিক কালার স্কিম
+# CSS দিয়ে সব কালার কাস্টমাইজ করা হয়েছে
 st.markdown("""
     <style>
-    .stApp { background: linear-gradient(135deg, #eef2f3 0%, #8e9eab 100%); }
-    .welcome-text { text-align: center; color: #2d3436; font-size: 2.2em; font-weight: 800; padding: 20px; }
-    .msg-bubble { background: #ffffff; padding: 15px; border-radius: 15px; border-left: 5px solid #6c5ce7; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); }
-    .analysis-panel { background: #f1f2f6; padding: 10px; border-radius: 10px; margin-top: 5px; font-size: 0.9em; color: #2d3436; }
+    /* ব্যাকগ্রাউন্ড গ্রেডিয়েন্ট */
+    .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+    
+    .welcome-text { text-align: center; font-size: 2em; font-weight: bold; color: #4a4a4a; margin-bottom: 20px; }
+    
+    /* মেসেজ বক্স ডিজাইন */
+    .msg-bubble { 
+        background-color: #d1e7ff; /* হালকা নীল ব্যাকগ্রাউন্ড */
+        padding: 15px; 
+        border-radius: 15px; 
+        color: #003366; /* গাঢ় নীল টেক্সট */
+        font-weight: 600;
+        box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* অ্যানালাইসিস প্যানেল */
+    .analysis-panel { 
+        background: #ffffff; 
+        padding: 8px; 
+        border-radius: 10px; 
+        margin-top: 5px; 
+        font-size: 0.85em; 
+        border-left: 4px solid #ff1493; /* পিঙ্ক বর্ডার */
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -32,7 +52,7 @@ if not st.session_state.username:
 st.markdown(f"<div class='welcome-text'>Welcome, {st.session_state.username}! 👋</div>", unsafe_allow_html=True)
 
 # Sidebar
-if st.sidebar.button("🗑️ Clear All"): collection.delete_many({}); st.rerun()
+if st.sidebar.button("🗑️ Clear All Chat"): collection.delete_many({}); st.rerun()
 
 # AI Analysis
 def analyze_message(text):
@@ -46,7 +66,9 @@ def analyze_message(text):
 # Display Messages
 for msg in collection.find().sort("timestamp", 1):
     with st.chat_message(msg.get("username")):
-        st.markdown(f"**{msg.get('username')}**")
+        # নাম গাঢ় পিঙ্ক রঙে
+        st.markdown(f"<span style='color:#FF1493; font-weight:bold;'>{msg.get('username')}</span>", unsafe_allow_html=True)
+        # মেসেজ গাঢ় ব্লু এবং বক্স হালকা নীল
         st.markdown(f"<div class='msg-bubble'>{msg.get('text')}</div>", unsafe_allow_html=True)
         
         ana = msg.get("analysis", {})
