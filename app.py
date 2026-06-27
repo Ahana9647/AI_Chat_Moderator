@@ -5,10 +5,13 @@ import time
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# Custom CSS
+# Updated CSS for high contrast and readability
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+    /* চ্যাট মেসেজের টেক্সট এবং কালার ফিক্স */
+    .stChatMessage { color: #000000 !important; }
+    .css-1n76uvr { color: #000000 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -52,9 +55,10 @@ def analyze_message(text):
         return {"emotion": "Positive 😊", "toxicity": "Safe 🟢"}
     return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢"}
 
-# Helper
+# Helper to generate distinct color for username
 def get_user_color(username):
-    colors = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1"]
+    # গাঢ় রঙ ব্যবহার করা হয়েছে যাতে দেখা যায়
+    colors = ["#800080", "#00008B", "#8B4513", "#006400"] 
     return colors[hash(username) % len(colors)]
 
 # Display Chat
@@ -64,15 +68,15 @@ messages = list(collection.find().sort("timestamp", 1))
 for msg in messages:
     user = msg.get("username", "Anonymous")
     text = msg.get("text", "")
-    analysis = msg.get("analysis", {"emotion": "Neutral", "toxicity": "Safe"})
+    analysis = msg.get("analysis", {"emotion": "Neutral 😐", "toxicity": "Safe 🟢"})
     msg_id = msg.get("_id")
     
     user_color = get_user_color(user)
     
     with st.chat_message(user):
         st.markdown(f"<span style='color:{user_color}; font-weight:bold;'>{user}</span>", unsafe_allow_html=True)
-        st.write(text)
-        st.caption(f"🤖 {analysis.get('emotion')} | {analysis.get('toxicity')}")
+        st.markdown(f"<div style='color:black;'>{text}</div>", unsafe_allow_html=True)
+        st.caption(f"<div style='color:grey;'>🤖 {analysis.get('emotion')} | {analysis.get('toxicity')}</div>", unsafe_allow_html=True)
         if st.button("Delete", key=str(msg_id)):
             collection.delete_one({"_id": msg_id})
             st.rerun()
