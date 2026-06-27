@@ -21,7 +21,6 @@ MONGO_URI = "mongodb+srv://ahana741222_db_user:xovyPVFSibWK6moy@whatsappcluster.
 db = pymongo.MongoClient(MONGO_URI)["ai_chat_database"]
 collection = db["messages_history"]
 
-# Header
 st.markdown("<h1 class='main-title'>💬 AI Chat Moderator & Group</h1>", unsafe_allow_html=True)
 
 # Session
@@ -35,7 +34,6 @@ if not st.session_state.username:
             st.rerun()
     st.stop()
 
-# Layout
 col1, col2 = st.columns([0.8, 0.2])
 with col1:
     st.markdown(f"<h3 style='color: #333;'>Welcome, {st.session_state.username}! 👋</h3>", unsafe_allow_html=True)
@@ -44,18 +42,24 @@ with col2:
         collection.delete_many({})
         st.rerun()
 
-# AI Analysis
+# AI Analysis & Math Logic
 def analyze_message(text):
     text_lower = text.lower()
+    
+    # যোগ করার ম্যাথ লজিক
+    if "sum" in text_lower:
+        try:
+            parts = text_lower.split()
+            nums = [float(n) for n in parts if n.replace('.','',1).isdigit()]
+            if len(nums) >= 2:
+                return {"emotion": "Helpful 🤖", "toxicity": "Safe 🟢", "category": "Math", "urgency": "Low 🟢", "result": sum(nums)}
+        except: pass
+
     if any(w in text_lower for w in ["fuck", "stupid", "hate"]):
         return {"emotion": "Angry 😡", "toxicity": "Toxic 🔴", "category": "Sensitive", "urgency": "High 🚨"}
     elif any(w in text_lower for w in ["love", "happy", "great"]):
         return {"emotion": "Positive 😊", "toxicity": "Safe 🟢", "category": "Social", "urgency": "Low 🟢"}
     return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low 🟢"}
-
-# Indian Time Helper - সরাসরি বর্তমান সময়ের সাথে ৫:৩০ যোগ করবে
-def get_real_ist():
-    return datetime.utcnow() + timedelta(hours=5, minutes=30)
 
 # Display Chat
 for msg in collection.find().sort("timestamp", 1):
@@ -63,18 +67,15 @@ for msg in collection.find().sort("timestamp", 1):
         st.markdown(f"<span style='color:#FF1493; font-weight:bold;'>{msg.get('username')}</span>", unsafe_allow_html=True)
         st.markdown(f"<div class='msg-bubble'>{msg.get('text')}</div>", unsafe_allow_html=True)
         
-        # সময় প্রদর্শন
-        ts = msg.get("timestamp")
-        # যদি ডেটাবেসের সময় UTC হয়, তবে এখানেও একইভাবে IST এ কনভার্ট করে দেখানো হচ্ছে
-        if isinstance(ts, datetime):
-            ist_ts = ts + timedelta(hours=5, minutes=30)
-            time_str = ist_ts.strftime("%I:%M %p")
-        else:
-            time_str = "N/A"
+        # ম্যাথ রেজাল্ট শো করা
+        ana = msg.get("analysis", {})
+        if "result" in ana:
+            st.success(f"💡 AI Math Result: {ana['result']}")
         
+        ts = msg.get("timestamp")
+        time_str = (ts + timedelta(hours=5, minutes=30)).strftime("%I:%M %p") if isinstance(ts, datetime) else "N/A"
         st.markdown(f"<div class='time-text'>{time_str}</div>", unsafe_allow_html=True)
         
-        ana = msg.get("analysis", {})
         st.markdown(f"""
             <div class='analysis-panel'>
             Emotion: {ana.get('emotion')} | Toxicity: {ana.get('toxicity')} | 
@@ -86,12 +87,11 @@ for msg in collection.find().sort("timestamp", 1):
             collection.delete_one({"_id": msg.get("_id")})
             st.rerun()
 
-# Input
-if user_msg := st.chat_input("Type your message..."):
+if user_msg := st.chat_input("Type 'sum 3 5' to add..."):
     collection.insert_one({
         "text": user_msg, 
         "username": st.session_state.username, 
         "analysis": analyze_message(user_msg),
-        "timestamp": datetime.utcnow() # ডেটাবেসে UTC সেভ হবে
+        "timestamp": datetime.utcnow()
     })
     st.rerun()
