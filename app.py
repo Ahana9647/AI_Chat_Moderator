@@ -1,11 +1,10 @@
 import streamlit as st
 import pymongo
-from datetime import datetime
-import pytz  # সঠিক লোকাল সময় পাওয়ার জন্য
+from datetime import datetime, timedelta
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# CSS ডিজাইন: কালারগুলো যাতে খুব স্পষ্ট বোঝা যায়
+# CSS ডিজাইন
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
@@ -54,8 +53,9 @@ def analyze_message(text):
         return {"emotion": "Positive 😊", "toxicity": "Safe 🟢", "category": "Social", "urgency": "Low 🟢"}
     return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low 🟢"}
 
-# Indian Timezone Configuration
-IST = pytz.timezone('Asia/Kolkata')
+# Helper: ইন্ডিয়ান টাইম বের করা
+def get_ist_time():
+    return datetime.utcnow() + timedelta(hours=5, minutes=30)
 
 # Display Chat
 for msg in collection.find().sort("timestamp", 1):
@@ -63,17 +63,9 @@ for msg in collection.find().sort("timestamp", 1):
         st.markdown(f"<span style='color:#FF1493; font-weight:bold;'>{msg.get('username')}</span>", unsafe_allow_html=True)
         st.markdown(f"<div class='msg-bubble'>{msg.get('text')}</div>", unsafe_allow_html=True)
         
-        # সময় প্রদর্শন লজিক (UTC থেকে IST-তে কনভার্ট করে দেখানো হচ্ছে)
+        # সময় প্রদর্শন
         ts = msg.get("timestamp")
-        if isinstance(ts, datetime):
-            if ts.tzinfo is None:
-                # যদি naive datetime হয়, তবে ওটাকে UTC ধরে নিয়ে IST-তে রূপান্তর করা হবে
-                ts = pytz.utc.localize(ts)
-            ist_time = ts.astimezone(IST)
-            time_str = ist_time.strftime("%I:%M %p")
-        else:
-            time_str = "N/A"
-            
+        time_str = ts.strftime("%I:%M %p") if isinstance(ts, datetime) else "N/A"
         st.markdown(f"<div class='time-text'>{time_str}</div>", unsafe_allow_html=True)
         
         ana = msg.get("analysis", {})
@@ -90,12 +82,10 @@ for msg in collection.find().sort("timestamp", 1):
 
 # Input
 if user_msg := st.chat_input("Type your message..."):
-    # ডেটাবেসে সবসময় standard UTC সময় সেভ করা ভালো অভ্যাস
-    utc_now = datetime.now(pytz.utc)
     collection.insert_one({
         "text": user_msg, 
         "username": st.session_state.username, 
         "analysis": analyze_message(user_msg),
-        "timestamp": utc_now
+        "timestamp": get_ist_time() # এখন থেকে সঠিক সময় সেভ হবে
     })
     st.rerun()
