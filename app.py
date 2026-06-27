@@ -1,6 +1,6 @@
 import streamlit as st
 import pymongo
-from datetime import datetime
+from datetime import datetime, timedelta # ১. এখানে timedelta যোগ করেছি
 
 st.set_page_config(page_title="AI Chat Moderator", page_icon="💬", layout="centered")
 
@@ -65,14 +65,15 @@ for msg in messages:
     user = msg.get("username", "Anonymous")
     text = msg.get("text", "")
     analysis = msg.get("analysis", {})
-    # টাইমস্ট্যাম্প ফরম্যাট
-    time = msg.get("timestamp").strftime("%H:%M") if msg.get("timestamp") else ""
     
+    
+    ist_time = msg.get("timestamp") + timedelta(hours=5, minutes=30) if msg.get("timestamp") else datetime.now()
+    time_str = ist_time.strftime("%H:%M") 
     
     avatar = "👤" if user != st.session_state.username else "😎"
     
     with st.chat_message(user, avatar=avatar):
-        st.markdown(f"**{user}**  *({time})*")
+        st.markdown(f"**{user}**  *({time_str})*")
         st.write(text)
         st.caption(f"🤖 AI: {analysis.get('emotion')} | {analysis.get('toxicity')} | Cat: {analysis.get('category')} | Urg: {analysis.get('urgency')}")
 
@@ -84,7 +85,7 @@ if user_message:
         "text": user_message, 
         "username": st.session_state.username,
         "analysis": analysis,
-        "timestamp": datetime.utcnow()
+        "timestamp": datetime.utcnow() # এটি UTC তেই ডাটাবেসে সেভ হবে
     }
     collection.insert_one(payload)
     st.rerun()
