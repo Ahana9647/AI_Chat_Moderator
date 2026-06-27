@@ -45,7 +45,6 @@ def analyze_message(text):
     positive_words = ["love", "happy", "great", "nice", "good", "beautiful", "thanks"]
     urgent_words = ["help", "emergency", "urgent", "জরুরি", "হেল্প"]
     
-    # Default values
     toxicity, emotion = "Safe 🟢", "Neutral 😐"
     category, urgency = "General", "Low"
     
@@ -58,12 +57,7 @@ def analyze_message(text):
     elif any(word in text_lower for word in urgent_words):
         category, urgency = "Support", "Critical ⚠️"
         
-    return {
-        "emotion": emotion, 
-        "toxicity": toxicity, 
-        "category": category, 
-        "urgency": urgency
-    }
+    return {"emotion": emotion, "toxicity": toxicity, "category": category, "urgency": urgency}
 
 # Display Chat
 messages = list(collection.find().sort("timestamp", 1))
@@ -71,9 +65,16 @@ for msg in messages:
     user = msg.get("username", "Anonymous")
     text = msg.get("text", "")
     analysis = msg.get("analysis", {})
+    # টাইমস্ট্যাম্প ফরম্যাট
+    time = msg.get("timestamp").strftime("%H:%M") if msg.get("timestamp") else ""
     
-    st.markdown(f"**{'🔴 You' if user == st.session_state.username else '🔵 ' + user}:** {text}")
-    st.caption(f"🤖 AI: {analysis.get('emotion')} | {analysis.get('toxicity')} | Category: {analysis.get('category')} | Urgency: {analysis.get('urgency')}")
+    
+    avatar = "👤" if user != st.session_state.username else "😎"
+    
+    with st.chat_message(user, avatar=avatar):
+        st.markdown(f"**{user}**  *({time})*")
+        st.write(text)
+        st.caption(f"🤖 AI: {analysis.get('emotion')} | {analysis.get('toxicity')} | Cat: {analysis.get('category')} | Urg: {analysis.get('urgency')}")
 
 # Input Message
 user_message = st.chat_input("Type your message here...")
