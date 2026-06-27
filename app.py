@@ -4,32 +4,18 @@ from datetime import datetime
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# CSS দিয়ে সব কালার কাস্টমাইজ করা হয়েছে
+# CSS: লেখাগুলো গাঢ় করার জন্য কালার পরিবর্তন করা হয়েছে
 st.markdown("""
     <style>
-    /* ব্যাকগ্রাউন্ড গ্রেডিয়েন্ট */
     .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-    
-    .welcome-text { text-align: center; font-size: 2em; font-weight: bold; color: #4a4a4a; margin-bottom: 20px; }
-    
-    /* মেসেজ বক্স ডিজাইন */
     .msg-bubble { 
-        background-color: #d1e7ff; /* হালকা নীল ব্যাকগ্রাউন্ড */
-        padding: 15px; 
-        border-radius: 15px; 
-        color: #003366; /* গাঢ় নীল টেক্সট */
-        font-weight: 600;
-        box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+        background-color: #d1e7ff; padding: 15px; border-radius: 15px; 
+        color: #003366; font-weight: 600; margin-bottom: 5px; 
     }
-    
-    /* অ্যানালাইসিস প্যানেল */
+    /* অ্যানালাইসিস প্যানেল যাতে পরিষ্কার দেখা যায় */
     .analysis-panel { 
-        background: #ffffff; 
-        padding: 8px; 
-        border-radius: 10px; 
-        margin-top: 5px; 
-        font-size: 0.85em; 
-        border-left: 4px solid #ff1493; /* পিঙ্ক বর্ডার */
+        background: #ffffff; padding: 10px; border-radius: 10px; margin-top: 5px; 
+        color: #000000; font-weight: bold; border-left: 5px solid #FF1493; 
     }
     </style>
 """, unsafe_allow_html=True)
@@ -48,33 +34,28 @@ if not st.session_state.username:
         st.rerun()
     st.stop()
 
-# Header
-st.markdown(f"<div class='welcome-text'>Welcome, {st.session_state.username}! 👋</div>", unsafe_allow_html=True)
-
-# Sidebar
-if st.sidebar.button("🗑️ Clear All Chat"): collection.delete_many({}); st.rerun()
+st.markdown(f"<h2 style='text-align: center; color: #4a4a4a;'>Welcome, {st.session_state.username}! 👋</h2>", unsafe_allow_html=True)
 
 # AI Analysis
 def analyze_message(text):
     text_lower = text.lower()
     if any(w in text_lower for w in ["fuck", "stupid", "hate"]):
-        return {"emotion": "Angry 😡", "toxicity": "Toxic 🔴", "category": "Sensitive", "urgency": "High"}
+        return {"emotion": "Angry 😡", "toxicity": "Toxic 🔴", "category": "Sensitive", "urgency": "High 🚨"}
     elif any(w in text_lower for w in ["love", "happy", "great"]):
-        return {"emotion": "Positive 😊", "toxicity": "Safe 🟢", "category": "Social", "urgency": "Low"}
-    return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low"}
+        return {"emotion": "Positive 😊", "toxicity": "Safe 🟢", "category": "Social", "urgency": "Low 🟢"}
+    return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low 🟢"}
 
-# Display Messages
+# Display Chat
 for msg in collection.find().sort("timestamp", 1):
     with st.chat_message(msg.get("username")):
-        # নাম গাঢ় পিঙ্ক রঙে
         st.markdown(f"<span style='color:#FF1493; font-weight:bold;'>{msg.get('username')}</span>", unsafe_allow_html=True)
-        # মেসেজ গাঢ় ব্লু এবং বক্স হালকা নীল
         st.markdown(f"<div class='msg-bubble'>{msg.get('text')}</div>", unsafe_allow_html=True)
         
         ana = msg.get("analysis", {})
+        # প্রতিটি ফিল্ড স্পষ্টভাবে লেখা হয়েছে
         st.markdown(f"""
             <div class='analysis-panel'>
-            🤖 <b>{ana.get('emotion')}</b> | {ana.get('toxicity')} | 
+            Emotion: {ana.get('emotion')} | Toxicity: {ana.get('toxicity')} | 
             Cat: {ana.get('category')} | Urg: {ana.get('urgency')}
             </div>
         """, unsafe_allow_html=True)
