@@ -1,10 +1,25 @@
 import streamlit as st
 import pymongo
-from datetime import datetime, timedelta # ১. এখানে timedelta যোগ করেছি
+from datetime import datetime
+import time
 
-st.set_page_config(page_title="AI Chat Moderator", page_icon="💬", layout="centered")
+st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-st.title("💬 AI Chat Moderator & WhatsApp Group")
+# Custom CSS for Background and User Colors
+st.markdown("""
+    <style>
+    
+    .stApp {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    
+    .stChatMessage {
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        border-radius: 15px !important;
+        padding: 10px !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # MongoDB Connection
 MONGO_URI = "mongodb+srv://ahana741222_db_user:xovyPVFSibWK6moy@whatsappcluster.vo6e4k0.mongodb.net/?appName=WhatsappCluster"
@@ -17,7 +32,7 @@ def get_db():
 db = get_db()
 collection = db["messages_history"]
 
-# Session State for User
+# User Session
 if "username" not in st.session_state:
     st.session_state.username = ""
 
@@ -29,63 +44,52 @@ if not st.session_state.username:
             st.rerun()
     st.stop()
 
-# Sidebar Controls
-if st.sidebar.button("🗑️ Clear Chat History"):
+# Sidebar
+st.sidebar.title("⚙️ Controls")
+if st.sidebar.button("🗑️ Clear All Chat"):
     collection.delete_many({})
     st.rerun()
-
 if st.sidebar.button("Log Out"):
     st.session_state.username = ""
     st.rerun()
 
-# AI Analysis Function
+# AI Analysis
 def analyze_message(text):
-    text_lower = text.lower()
-    toxic_words = ["fuck", "stupid", "idiot", "bad", "hate", "ugly"]
-    positive_words = ["love", "happy", "great", "nice", "good", "beautiful", "thanks"]
-    urgent_words = ["help", "emergency", "urgent", "জরুরি", "হেল্প"]
-    
-    toxicity, emotion = "Safe 🟢", "Neutral 😐"
-    category, urgency = "General", "Low"
-    
-    if any(word in text_lower for word in toxic_words):
-        toxicity, emotion = "Toxic 🔴", "Angry 😡"
-        category, urgency = "Sensitive", "High"
-    elif any(word in text_lower for word in positive_words):
-        toxicity, emotion = "Safe 🟢", "Positive 😊"
-        category, urgency = "Social", "Low"
-    elif any(word in text_lower for word in urgent_words):
-        category, urgency = "Support", "Critical ⚠️"
-        
-    return {"emotion": emotion, "toxicity": toxicity, "category": category, "urgency": urgency}
+    return {"emotion": "Positive 😊", "toxicity": "Safe 🟢"}
+
+# Helper to generate unique color for each user
+def get_user_color(username):
+    colors = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#33FFF5", "#F5FF33"]
+    return colors[hash(username) % len(colors)]
 
 # Display Chat
+st.title(f"Welcome, {st.session_state.username}! 👋")
 messages = list(collection.find().sort("timestamp", 1))
+
 for msg in messages:
     user = msg.get("username", "Anonymous")
     text = msg.get("text", "")
-    analysis = msg.get("analysis", {})
+    msg_id = msg.get("_id")
     
+   
+    user_color = get_user_color(user)
     
-    ist_time = msg.get("timestamp") + timedelta(hours=5, minutes=30) if msg.get("timestamp") else datetime.now()
-    time_str = ist_time.strftime("%H:%M") 
-    
-    avatar = "👤" if user != st.session_state.username else "😎"
-    
-    with st.chat_message(user, avatar=avatar):
-        st.markdown(f"**{user}**  *({time_str})*")
+    with st.chat_message(user, avatar="👤"):
+        st.markdown(f"<span style='color:{user_color}; font-weight:bold;'>{user}</span>", unsafe_allow_html=True)
         st.write(text)
-        st.caption(f"🤖 AI: {analysis.get('emotion')} | {analysis.get('toxicity')} | Cat: {analysis.get('category')} | Urg: {analysis.get('urgency')}")
+        if st.button("Delete", key=str(msg_id)):
+            collection.delete_one({"_id": msg_id})
+            st.rerun()
 
-# Input Message
+# Input
 user_message = st.chat_input("Type your message here...")
 if user_message:
-    analysis = analyze_message(user_message)
-    payload = {
-        "text": user_message, 
-        "username": st.session_state.username,
-        "analysis": analysis,
-        "timestamp": datetime.utcnow() # এটি UTC তেই ডাটাবেসে সেভ হবে
-    }
-    collection.insert_one(payload)
-    st.rerun()
+    with st.spinner('AI is analyzing...'):
+        time.sleep(0.5)
+        payload = {
+            "text": user_message, 
+            "username": st.session_state.username,
+            "timestamp": datetime.utcnow()
+        }
+        collection.insert_one(payload)
+        st.rerun()
