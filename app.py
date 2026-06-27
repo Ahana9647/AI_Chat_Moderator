@@ -34,28 +34,43 @@ if st.sidebar.button("Log Out"):
     st.session_state.username = ""
     st.rerun()
 
-# AI Analysis
+# AI Analysis Function
 def analyze_message(text):
     text_lower = text.lower()
     toxic_words = ["fuck", "stupid", "idiot", "bad", "hate", "ugly"]
     positive_words = ["love", "happy", "great", "nice", "good", "beautiful", "thanks"]
+    urgent_words = ["help", "emergency", "urgent", "জরুরি", "হেল্প"]
     
+    # Default values
     toxicity, emotion = "Safe 🟢", "Neutral 😐"
+    category, urgency = "General", "Low"
     
     if any(word in text_lower for word in toxic_words):
         toxicity, emotion = "Toxic 🔴", "Angry 😡"
+        category, urgency = "Sensitive", "High"
     elif any(word in text_lower for word in positive_words):
         toxicity, emotion = "Safe 🟢", "Positive 😊"
+        category, urgency = "Social", "Low"
+    elif any(word in text_lower for word in urgent_words):
+        category, urgency = "Support", "Critical ⚠️"
         
-    return {"emotion": emotion, "toxicity": toxicity}
+    return {
+        "emotion": emotion, 
+        "toxicity": toxicity, 
+        "category": category, 
+        "urgency": urgency
+    }
+
 # Display Chat
 messages = list(collection.find().sort("timestamp", 1))
 for msg in messages:
     user = msg.get("username", "Anonymous")
     text = msg.get("text", "")
     analysis = msg.get("analysis", {})
+    
     st.markdown(f"**{'🔴 You' if user == st.session_state.username else '🔵 ' + user}:** {text}")
-    st.caption(f"🤖 Analysis: {analysis.get('emotion')} | Toxicity: {analysis.get('toxicity')}")
+    # Displaying all analysis details
+    st.caption(f"🤖 AI: {analysis.get('emotion')} | {analysis.get('toxicity')} | Category: {analysis.get('category')} | Urgency: {analysis.get('urgency')}")
 
 # Input Message
 user_message = st.chat_input("Type your message here...")
