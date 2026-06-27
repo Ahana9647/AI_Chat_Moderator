@@ -4,19 +4,14 @@ from datetime import datetime
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# CSS: লেখাগুলো গাঢ় করার জন্য কালার পরিবর্তন করা হয়েছে
+# CSS: হেডিং এবং ইনপুট লেবেলের কালার ফিক্স
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-    .msg-bubble { 
-        background-color: #d1e7ff; padding: 15px; border-radius: 15px; 
-        color: #003366; font-weight: 600; margin-bottom: 5px; 
-    }
-    /* অ্যানালাইসিস প্যানেল যাতে পরিষ্কার দেখা যায় */
-    .analysis-panel { 
-        background: #ffffff; padding: 10px; border-radius: 10px; margin-top: 5px; 
-        color: #000000; font-weight: bold; border-left: 5px solid #FF1493; 
-    }
+    .main-title { color: #003399; text-align: center; font-weight: 800; font-size: 2.5em; }
+    .input-label { color: #000000 !important; font-weight: bold; font-size: 1.1em; }
+    .msg-bubble { background-color: #d1e7ff; padding: 15px; border-radius: 15px; color: #003366; font-weight: 600; margin-bottom: 5px; }
+    .analysis-panel { background: #ffffff; padding: 10px; border-radius: 10px; margin-top: 5px; color: #000000; font-weight: bold; border-left: 5px solid #FF1493; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -25,16 +20,20 @@ MONGO_URI = "mongodb+srv://ahana741222_db_user:xovyPVFSibWK6moy@whatsappcluster.
 db = pymongo.MongoClient(MONGO_URI)["ai_chat_database"]
 collection = db["messages_history"]
 
+# Header
+st.markdown("<h1 class='main-title'>💬 AI Chat Moderator & Group</h1>", unsafe_allow_html=True)
+
 # Session
 if "username" not in st.session_state: st.session_state.username = ""
 if not st.session_state.username:
-    name_input = st.text_input("Enter your name:")
+    # লেবেলটিকে কালো করার জন্য কাস্টম এইচটিএমএল ব্যবহার করেছি
+    st.markdown("<p class='input-label'>Enter your name:</p>", unsafe_allow_html=True)
+    name_input = st.text_input("", key="name_input")
     if st.button("Join Room 🚀"):
-        st.session_state.username = name_input
-        st.rerun()
+        if name_input.strip():
+            st.session_state.username = name_input
+            st.rerun()
     st.stop()
-
-st.markdown(f"<h2 style='text-align: center; color: #4a4a4a;'>Welcome, {st.session_state.username}! 👋</h2>", unsafe_allow_html=True)
 
 # AI Analysis
 def analyze_message(text):
@@ -52,7 +51,6 @@ for msg in collection.find().sort("timestamp", 1):
         st.markdown(f"<div class='msg-bubble'>{msg.get('text')}</div>", unsafe_allow_html=True)
         
         ana = msg.get("analysis", {})
-        # প্রতিটি ফিল্ড স্পষ্টভাবে লেখা হয়েছে
         st.markdown(f"""
             <div class='analysis-panel'>
             Emotion: {ana.get('emotion')} | Toxicity: {ana.get('toxicity')} | 
