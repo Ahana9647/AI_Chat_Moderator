@@ -29,7 +29,11 @@ if not st.session_state.username:
             st.rerun()
     st.stop()
 
-# Logout
+# Sidebar Controls
+if st.sidebar.button("🗑️ Clear Chat History"):
+    collection.delete_many({})
+    st.rerun()
+
 if st.sidebar.button("Log Out"):
     st.session_state.username = ""
     st.rerun()
@@ -69,7 +73,6 @@ for msg in messages:
     analysis = msg.get("analysis", {})
     
     st.markdown(f"**{'🔴 You' if user == st.session_state.username else '🔵 ' + user}:** {text}")
-    # Displaying all analysis details
     st.caption(f"🤖 AI: {analysis.get('emotion')} | {analysis.get('toxicity')} | Category: {analysis.get('category')} | Urgency: {analysis.get('urgency')}")
 
 # Input Message
