@@ -53,9 +53,8 @@ def analyze_message(text):
         return {"emotion": "Positive 😊", "toxicity": "Safe 🟢", "category": "Social", "urgency": "Low 🟢"}
     return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low 🟢"}
 
-# Indian Time Helper
-def get_current_ist():
-    # UTC থেকে ৫ ঘণ্টা ৩০ মিনিট যোগ করে IST পাওয়া যায়
+# Indian Time Helper - সরাসরি বর্তমান সময়ের সাথে ৫:৩০ যোগ করবে
+def get_real_ist():
     return datetime.utcnow() + timedelta(hours=5, minutes=30)
 
 # Display Chat
@@ -66,7 +65,13 @@ for msg in collection.find().sort("timestamp", 1):
         
         # সময় প্রদর্শন
         ts = msg.get("timestamp")
-        time_str = ts.strftime("%I:%M %p") if isinstance(ts, datetime) else "N/A"
+        # যদি ডেটাবেসের সময় UTC হয়, তবে এখানেও একইভাবে IST এ কনভার্ট করে দেখানো হচ্ছে
+        if isinstance(ts, datetime):
+            ist_ts = ts + timedelta(hours=5, minutes=30)
+            time_str = ist_ts.strftime("%I:%M %p")
+        else:
+            time_str = "N/A"
+        
         st.markdown(f"<div class='time-text'>{time_str}</div>", unsafe_allow_html=True)
         
         ana = msg.get("analysis", {})
@@ -87,6 +92,6 @@ if user_msg := st.chat_input("Type your message..."):
         "text": user_msg, 
         "username": st.session_state.username, 
         "analysis": analyze_message(user_msg),
-        "timestamp": get_current_ist() 
+        "timestamp": datetime.utcnow() # ডেটাবেসে UTC সেভ হবে
     })
     st.rerun()
