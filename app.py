@@ -4,7 +4,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-
+# CSS ডিজাইন
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
@@ -57,7 +57,7 @@ for msg in collection.find().sort("timestamp", 1):
         st.markdown(f"<span style='color:#FF1493; font-weight:bold;'>{msg.get('username')}</span>", unsafe_allow_html=True)
         st.markdown(f"<div class='msg-bubble'>{msg.get('text')}</div>", unsafe_allow_html=True)
         
-        
+      
         ts = msg.get("timestamp")
         time_str = ts.strftime("%I:%M %p") if isinstance(ts, datetime) else "N/A"
         st.markdown(f"<div class='time-text'>{time_str}</div>", unsafe_allow_html=True)
