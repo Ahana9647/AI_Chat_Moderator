@@ -53,8 +53,9 @@ def analyze_message(text):
         return {"emotion": "Positive 😊", "toxicity": "Safe 🟢", "category": "Social", "urgency": "Low 🟢"}
     return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low 🟢"}
 
-# Helper: ইন্ডিয়ান টাইম বের করা
-def get_ist_time():
+# Indian Time Helper
+def get_current_ist():
+    # UTC থেকে ৫ ঘণ্টা ৩০ মিনিট যোগ করে IST পাওয়া যায়
     return datetime.utcnow() + timedelta(hours=5, minutes=30)
 
 # Display Chat
@@ -86,6 +87,6 @@ if user_msg := st.chat_input("Type your message..."):
         "text": user_msg, 
         "username": st.session_state.username, 
         "analysis": analyze_message(user_msg),
-        "timestamp": get_ist_time() # এখন থেকে সঠিক সময় সেভ হবে
+        "timestamp": get_current_ist() 
     })
     st.rerun()
