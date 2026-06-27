@@ -4,13 +4,15 @@ from datetime import datetime
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# CSS: হেডিং এবং ইনপুট লেবেলের কালার ফিক্স
+# CSS: হেডিং ভায়োলেট কালার এবং অন্যান্য ডিজাইন
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-    .main-title { color: #003399; text-align: center; font-weight: 800; font-size: 2.5em; }
+    /* হেডিং ভায়োলেট (Violet) কালার করা হয়েছে */
+    .main-title { color: #8A2BE2 !important; text-align: center; font-weight: 800; font-size: 2.5em; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
     .input-label { color: #000000 !important; font-weight: bold; font-size: 1.1em; }
-    .msg-bubble { background-color: #d1e7ff; padding: 15px; border-radius: 15px; color: #003366; font-weight: 600; margin-bottom: 5px; }
+    
+    .msg-bubble { background-color: #d1e7ff; padding: 15px; border-radius: 15px; color: #003366; font-weight: 600; margin-bottom: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
     .analysis-panel { background: #ffffff; padding: 10px; border-radius: 10px; margin-top: 5px; color: #000000; font-weight: bold; border-left: 5px solid #FF1493; }
     </style>
 """, unsafe_allow_html=True)
@@ -20,13 +22,12 @@ MONGO_URI = "mongodb+srv://ahana741222_db_user:xovyPVFSibWK6moy@whatsappcluster.
 db = pymongo.MongoClient(MONGO_URI)["ai_chat_database"]
 collection = db["messages_history"]
 
-# Header
+# Header in Violet
 st.markdown("<h1 class='main-title'>💬 AI Chat Moderator & Group</h1>", unsafe_allow_html=True)
 
-# Session
+# Session Authentication
 if "username" not in st.session_state: st.session_state.username = ""
 if not st.session_state.username:
-    # লেবেলটিকে কালো করার জন্য কাস্টম এইচটিএমএল ব্যবহার করেছি
     st.markdown("<p class='input-label'>Enter your name:</p>", unsafe_allow_html=True)
     name_input = st.text_input("", key="name_input")
     if st.button("Join Room 🚀"):
@@ -34,6 +35,16 @@ if not st.session_state.username:
             st.session_state.username = name_input
             st.rerun()
     st.stop()
+
+# Welcome Text and Clear All Button Layout
+col1, col2 = st.columns([0.8, 0.2])
+with col1:
+    st.markdown(f"<h3 style='color: #333;'>Welcome, {st.session_state.username}! 👋</h3>", unsafe_allow_html=True)
+with col2:
+    # চ্যাটের ভেতরেই সব ডিলিট করার বাটন
+    if st.button("🗑️ Clear All"):
+        collection.delete_many({})
+        st.rerun()
 
 # AI Analysis
 def analyze_message(text):
