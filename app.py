@@ -79,11 +79,11 @@ for msg in collection.find().sort("timestamp", 1):
     with st.chat_message(user_name):
         st.markdown(f"<span style='color:{get_user_color(user_name)}; font-weight:bold;'>{user_name}</span>", unsafe_allow_html=True)
         
-        ং
+
         bubble_class = "msg-bubble toxic-bubble" if is_toxic else "msg-bubble"
         st.markdown(f"<div class='{bubble_class}'>{msg.get('text')}</div>", unsafe_allow_html=True)
         
-        # সময়
+        
         ts = msg.get("timestamp")
         time_str = (ts + timedelta(hours=5, minutes=30)).strftime("%I:%M %p") if isinstance(ts, datetime) else "N/A"
         st.markdown(f"<div class='time-text'>{time_str}</div>", unsafe_allow_html=True)
