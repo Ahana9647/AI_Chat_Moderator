@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# CSS ডিজাইন
+
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
@@ -44,11 +44,11 @@ with col2:
         collection.delete_many({})
         st.rerun()
 
-# উন্নত AI Analysis লজিক
+
 def analyze_message(text):
     text_lower = text.lower()
     
-    # বিদ্যমান লজিক
+   
     neg_words = ["fuck", "stupid", "hate", "bad", "sad", "ugly"]
     pos_words = ["love", "happy", "great", "nice", "good"]
     
@@ -59,7 +59,7 @@ def analyze_message(text):
     else:
         em, tox, cat, urg = "Neutral 😐", "Safe 🟢", "General", "Low 🟢"
     
-    # নতুন ফিচার: Intensity এবং Language
+    
     length = "Long" if len(text) > 20 else "Short"
     lang = "Bengali" if any('\u0980' <= char <= '\u09FF' for char in text) else "English"
         
