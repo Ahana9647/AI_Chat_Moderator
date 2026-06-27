@@ -5,13 +5,19 @@ import time
 
 st.set_page_config(page_title="AI Chat Pro", page_icon="💬", layout="centered")
 
-# Updated CSS for high contrast and readability
+# Custom CSS for UI improvement
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-    /* চ্যাট মেসেজের টেক্সট এবং কালার ফিক্স */
-    .stChatMessage { color: #000000 !important; }
-    .css-1n76uvr { color: #000000 !important; }
+    .welcome-text { text-align: center; font-size: 2em; font-weight: bold; color: #2C3E50; margin-bottom: 20px; }
+    .analysis-box { 
+        background-color: #f8f9fa; 
+        padding: 5px 10px; 
+        border-radius: 8px; 
+        border-left: 4px solid #3498db; 
+        font-size: 0.85em; 
+        color: #34495e; 
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -38,6 +44,9 @@ if not st.session_state.username:
             st.rerun()
     st.stop()
 
+# Header
+st.markdown(f"<div class='welcome-text'>Welcome, {st.session_state.username}! 👋</div>", unsafe_allow_html=True)
+
 # Sidebar
 if st.sidebar.button("🗑️ Clear All Chat"):
     collection.delete_many({})
@@ -46,37 +55,35 @@ if st.sidebar.button("Log Out"):
     st.session_state.username = ""
     st.rerun()
 
-# AI Analysis
+# AI Analysis Logic
 def analyze_message(text):
     text_lower = text.lower()
     if any(word in text_lower for word in ["fuck", "stupid", "hate"]):
-        return {"emotion": "Angry 😡", "toxicity": "Toxic 🔴"}
+        return {"emotion": "Angry 😡", "toxicity": "Toxic 🔴", "category": "Sensitive", "urgency": "High"}
     elif any(word in text_lower for word in ["love", "happy", "great"]):
-        return {"emotion": "Positive 😊", "toxicity": "Safe 🟢"}
-    return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢"}
-
-# Helper to generate distinct color for username
-def get_user_color(username):
-    # গাঢ় রঙ ব্যবহার করা হয়েছে যাতে দেখা যায়
-    colors = ["#800080", "#00008B", "#8B4513", "#006400"] 
-    return colors[hash(username) % len(colors)]
+        return {"emotion": "Positive 😊", "toxicity": "Safe 🟢", "category": "Social", "urgency": "Low"}
+    return {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low"}
 
 # Display Chat
-st.title(f"Welcome, {st.session_state.username}! 👋")
 messages = list(collection.find().sort("timestamp", 1))
 
 for msg in messages:
     user = msg.get("username", "Anonymous")
     text = msg.get("text", "")
-    analysis = msg.get("analysis", {"emotion": "Neutral 😐", "toxicity": "Safe 🟢"})
+    analysis = msg.get("analysis", {"emotion": "Neutral 😐", "toxicity": "Safe 🟢", "category": "General", "urgency": "Low"})
     msg_id = msg.get("_id")
     
-    user_color = get_user_color(user)
-    
     with st.chat_message(user):
-        st.markdown(f"<span style='color:{user_color}; font-weight:bold;'>{user}</span>", unsafe_allow_html=True)
-        st.markdown(f"<div style='color:black;'>{text}</div>", unsafe_allow_html=True)
-        st.caption(f"<div style='color:grey;'>🤖 {analysis.get('emotion')} | {analysis.get('toxicity')}</div>", unsafe_allow_html=True)
+        st.markdown(f"**{user}**")
+        st.write(text)
+        # Analysis with improved colors
+        st.markdown(f"""
+            <div class='analysis-box'>
+            🤖 <b>{analysis.get('emotion')}</b> | <b>{analysis.get('toxicity')}</b> | 
+            Cat: {analysis.get('category')} | Urg: {analysis.get('urgency')}
+            </div>
+        """, unsafe_allow_html=True)
+        
         if st.button("Delete", key=str(msg_id)):
             collection.delete_one({"_id": msg_id})
             st.rerun()
@@ -93,3 +100,4 @@ if user_message:
     }
     collection.insert_one(payload)
     st.rerun()
+    
